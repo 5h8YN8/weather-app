@@ -1,4 +1,3 @@
-const axios = require("axios").default;
 
 function formatDateTime(event) {
   let newDate = new Date();
