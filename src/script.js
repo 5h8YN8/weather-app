@@ -1,46 +1,8 @@
-let weather = {
-  paris: {
-    temp: 19.7,
-    humidity: 80,
-  },
-  tokyo: {
-    temp: 17.3,
-    humidity: 50,
-  },
-  lisbon: {
-    temp: 30.2,
-    humidity: 20,
-  },
-  "san francisco": {
-    temp: 20.9,
-    humidity: 100,
-  },
-  moscow: {
-    temp: -5,
-    humidity: 20,
-  },
-};
+const axios = require("axios").default;
 
-let currentCity = prompt("Enter a City");
-currentCity = currentCity.toLowerCase();
-
-if (weather[currentCity] !== undefined) {
-  let temperature = weather[currentCity].temp;
-  let humidRate = weather[currentCity].humidity;
-  let celcius = Math.round(temperature);
-  let farenheit = Math.round((celcius * 9) / 5 + 32);
-  alert(
-    `It is currently ${celcius}°C (${farenheit}°F) in ${currentCity} with a humidity of ${humidRate}%.`
-  );
-} else {
-  alert(
-    `Sorry, we don't know the weather for this city, try going to https://www.google.com/search?q=weather+${currentCity}`
-  );
-}
-
-function formatDateTime(now)
-{
- let weekdays = [
+function formatDateTime(event) {
+  let newDate = new Date();
+  let weekdays = [
     "Sunday",
     "Monday",
     "Tuesday",
@@ -49,39 +11,95 @@ function formatDateTime(now)
     "Friday",
     "Saturday"
   ];
-  let day = weekdays[now.getDay()];
-  let hour=now.getHours ();
-  let minute = now.getMinutes ();
-  hour = hour<10 ?'0'+hour : hour;
-  minute = minute  < 10 ? '0'+minute : minute;
+  let day = weekdays[newDate.getDay()];
+  let hour = newDate.getHours();
+  let minute = newDate.getMinutes();
+  hour = hour < 10 ? "0" + hour : hour;
+  minute = minute < 10 ? "0" + minute : minute;
   let currentDayTime = `${day} ${hour}:${minute}`;
-return currentDayTime;
+  let todayTime = document.querySelector("#today-card-title");
+  todayTime.innerHTML = `Today is ${currentDayTime}`;
 }
 
-let newDate= new Date();
-let current = document.querySelector ("#current-day-time"); 
-current.innerHTML = formatDateTime(newDate);
+function searchWeatherData(event) {
+  let apiKey = "f9d6c217fdb897f27b6e330e8c371a9d";
+  let searchCity = document.querySelector("#city-search-query");
+  //searchCity = searchCity.toLowerCase();
+  //searchCity = searchCity.capitalize();
+  let apiURL = "https://api.openweathermap.org/data/2.5/weather?q=";
+  let celUnit = "metric";
+  let currentWeatherURL = `${apiURL}${searchCity.value}&units=${celUnit}&appid=${apiKey}`;
+  axios.get(currentWeatherURL).then(currentCityWeather);
+}
 
-function perfectMatchSearch (event){
+function handlePosition(event) {
   event.preventDefault();
-  let query = document.querySelector ("#city-search-query");
-  let newValue = document.querySelector ("#perfect-match");
-  newValue.innerHTML= `${query.value}`;
+  navigator.geolocation.getCurrentPosition(currentCitySearch);
 }
+function currentCitySearch(position) {
+  let lat = position.coords.latitude;
+  let lon = position.coords.longitude;
+  let apiKey = "f9d6c217fdb897f27b6e330e8c371a9d";
+  let apiURL = "https://api.openweathermap.org/data/2.5/weather?";
+  let celUnit = "metric";
+  let currentWeatherURL = `${apiURL}lat=${lat}&lon=${lon}&units=${celUnit}&appid=${apiKey}`;
+  console.log(currentWeatherURL);
+  axios.get(currentWeatherURL).then(currentCityWeather2);
+}
+
+function currentCityWeather(response) {
+  let cityTemp = Math.round(response.data.main.temp);
+  let cityHumid = response.data.main.humidity;
+  let cityDescription = response.data.weather[0].main;
+  let cityWind = response.data.wind.speed;
+  console.log(cityDescription);
+  let todayDescription = document.querySelector("#today-weather-description");
+  todayDescription.innerHTML = `${cityDescription}`;
+  let todayTemp = document.querySelector("#today-temp");
+  todayTemp.innerHTML = `${cityTemp}°C <br /> ${cityHumid}% Humidity <br /> ${cityWind} M/S Wind Speed`;
+}
+function currentCityWeather2(response) {
+  let cityTemp = Math.round(response.data.main.temp);
+  let cityHumid = response.data.main.humidity;
+  let cityDescription = response.data.weather[0].main;
+  let cityWind = response.data.wind.speed;
+  let query = response.data.name;
+  let newValue = document.querySelector("#perfect-match");
+  newValue.innerHTML = `${query}`;
+  let todayDescription = document.querySelector("#today-weather-description");
+  todayDescription.innerHTML = `${cityDescription}`;
+  let todayTemp = document.querySelector("#today-temp");
+  todayTemp.innerHTML = `${cityTemp}°C <br /> ${cityHumid}% Humidity <br /> ${cityWind} M/S Wind Speed`;
+}
+
+function perfectMatchSearch(event) {
+  event.preventDefault();
+  let query = document.querySelector("#city-search-query");
+  let newValue = document.querySelector("#perfect-match");
+  newValue.innerHTML = `${query.value}`;
+}
+
+let cityTime = document.querySelector("#search-other-cities");
+cityTime.addEventListener("submit", formatDateTime);
+
+let apiCity = document.querySelector("#search-other-cities");
+apiCity.addEventListener("submit", searchWeatherData);
 
 let citySearch = document.querySelector("#search-other-cities");
 citySearch.addEventListener("submit", perfectMatchSearch);
 
-
-function convertCels (event){
-  let celTemp = document.querySelector("#temp");
-  let celTempNum= Number(celTemp);
-  let farTemp = (celTempNum * 9/5) + 32;
-let farFormat = document.querySelector ("#temp-format");
-
-celTemp.innerHTML=`${farTemp}`;
-farFormat.innerHTML=`°F`;
-}
-
 let buttonClick = document.querySelector("#current-city-button");
-buttonClick.addEventListener("click",convertCels);
+buttonClick.addEventListener("click", handlePosition);
+
+let currentButtonClick = document.querySelector("#current-city-button");
+currentButtonClick.addEventListener("click", formatDateTime);
+
+//function convertCels(event) {
+//let celTemp = document.querySelector("#temp");
+//let celTempNum = celTemp.innerHTML;
+//celTempNum = Number(celTemp);
+//let farTemp = (celTemp * 9) / 5 + 32;
+//let farFormat = document.querySelector("#temp-format");
+
+//celTemp.innerHTML = `${farTemp}`;
+//farFormat.innerHTML = `°F`;}
